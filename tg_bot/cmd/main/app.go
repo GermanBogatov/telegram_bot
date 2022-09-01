@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/GermanBogatov/telegram_bot/internal"
-	"github.com/GermanBogatov/telegram_bot/internal/config"
-	"github.com/GermanBogatov/telegram_bot/pkg/logging"
+	"github.com/GermanBogatov/tg_bot/internal"
+	"github.com/GermanBogatov/tg_bot/internal/config"
+	"github.com/GermanBogatov/tg_bot/pkg/logging"
 	"log"
 )
 

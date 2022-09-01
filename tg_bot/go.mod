@@ -1,4 +1,4 @@
-module github.com/GermanBogatov/telegram_bot
+module github.com/GermanBogatov/tg_bot
 
 go 1.18
 

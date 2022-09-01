@@ -1,7 +1,7 @@
 package shutdown
 
 import (
-	"github.com/GermanBogatov/tgbot/pkg/logging"
+	"github.com/GermanBogatov/tg_bot/pkg/logging"
 	"io"
 	"os"
 	"os/signal"

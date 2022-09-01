@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/GermanBogatov/tgbot/pkg/client/youtube"
-	"github.com/GermanBogatov/tgbot/pkg/logging"
+	"github.com/GermanBogatov/tg_bot/pkg/client/youtube"
+	"github.com/GermanBogatov/tg_bot/pkg/logging"
 )
 
 type Service struct {
