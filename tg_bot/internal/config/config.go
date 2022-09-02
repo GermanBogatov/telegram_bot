@@ -16,15 +16,25 @@ type Config struct {
 	Telegram struct {
 		Token string `yaml:"token" env:"ST-BOT-TelegramToken" env-required:"true"`
 	}
-	Youtube struct {
-		APIURL      string `yaml:"api_url"`
-		AccessToken string `yaml:"access_token"`
-	}
+	RabbitMQ struct {
+		Host     string `yaml:"host" env:"YTS_RABBIT_HOST" env-required:"true"`
+		Port     string `yaml:"port" env:"YTS_RABBIT_PORT" env-required:"true"`
+		Username string `yaml:"username" env:"YTS_RABBIT_USERNAME" env-required:"true"`
+		Password string `yaml:"password" env:"YTS_RABBIT_PASSWORD" env-required:"true"`
+		Consumer struct {
+			Queue              string `yaml:"queue" env:"YTS_RABBIT_CONSUMER_QUEUE" env-required:"true"`
+			MessagesBufferSize int    `yaml:"messagesbuffersize" env:"YTS_RABBIT_CONSUMER_MBS" env-default:"100"`
+		} `yaml:"consumer" env-required:"true"`
+		Producer struct {
+			Queue string `yaml:"queue" env:"YTS_Rabbit_PRODUCERQUEUE" env-required:"true"`
+		} `yaml:"producer" env-required:"true"`
+	} `yaml:"rabbitMQ"`
 	AppConfig AppConfig `yaml:"app" env-required:"true"`
 }
 
 type AppConfig struct {
-	LogLevel string `yaml:"log_level" env:"ST-BOT-loglevel" env-default:"error" env-required:"true"`
+	EventWorkers int    `yaml:"event_workers" env:"ST-BOT-EventWorkers" env-default:"3" env-required:"true"`
+	LogLevel     string `yaml:"log_level" env:"ST-BOT-loglevel" env-default:"error" env-required:"true"`
 }
 
 var instance *Config

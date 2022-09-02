@@ -2,7 +2,7 @@ package rabbitmq
 
 import (
 	"fmt"
-	"github.com/GermanBogatov/youtube_service/pkg/client/mq"
+	"github.com/GermanBogatov/tg_bot/pkg/client/mq"
 	"github.com/streadway/amqp"
 	"log"
 	"time"

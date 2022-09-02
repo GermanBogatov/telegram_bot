@@ -1,11 +1,10 @@
 package events
 
 import (
-	"context"
 	"encoding/json"
-	"github.com/GermanBogatov/youtube_service/internal/youtube"
-	"github.com/GermanBogatov/youtube_service/pkg/client/mq"
-	"github.com/GermanBogatov/youtube_service/pkg/logging"
+	"github.com/GermanBogatov/tg_bot/pkg/client/mq"
+	"github.com/GermanBogatov/tg_bot/pkg/logging"
+	tele "gopkg.in/telebot.v3"
 	"strconv"
 )
 
@@ -16,12 +15,12 @@ type worker struct {
 	responseQueue string
 	messages      <-chan mq.Message
 	logger        *logging.Logger
-	service       youtube.Service
+	bot           *tele.Bot
 }
 
 //TODO попробовать вернуть структуру а не интерфейс
-func NewWorker(id int, client mq.Consumer, responseQueue string, producer mq.Producer, messages <-chan mq.Message, logger *logging.Logger, service youtube.Service) Worker {
-	return &worker{id: id, client: client, responseQueue: responseQueue, messages: messages, producer: producer, logger: logger, service: service}
+func NewWorker(id int, client mq.Consumer, producer mq.Producer, messages <-chan mq.Message, logger *logging.Logger, bot *tele.Bot) Worker {
+	return &worker{id: id, client: client, producer: producer, messages: messages, logger: logger, bot: bot}
 }
 
 type Worker interface {
@@ -30,7 +29,7 @@ type Worker interface {
 
 func (w *worker) Process() {
 	for msg := range w.messages {
-		event := SearchTrack{}
+		event := SearchTrackResponse{}
 		if err := json.Unmarshal(msg.Body, &event); err != nil {
 			w.logger.Errorf("[worker #%d]: failed to unmarshal event due to error %v", w.id, err)
 			w.logger.Errorf("[worker #%d]: body: %s", w.id, msg.Body)
@@ -38,23 +37,24 @@ func (w *worker) Process() {
 			w.reject(msg)
 			continue
 		}
-		respData := map[string]string{
-			"request_id": event.RequestID,
-		}
-		name, err := w.service.FindTrackByName(context.TODO(), event.Name)
+
+		i, _ := strconv.ParseInt(event.RequestID, 10, 64)
+		id, err := w.bot.ChatByID(i)
 		if err != nil {
-			respData["err"] = err.Error()
-		} else {
-			respData["name"] = name
-
+			w.logger.Errorf("[worker #%d]: failed to get chat by id due to error %v", w.id, err)
 		}
 
-		respData["success"] = strconv.FormatBool(err == nil)
+		message := "Запрос не обработан, произошла ошибка"
+		if event.Success == "true" {
+			message = event.Name
+		}
 
-		w.sendResponse(respData)
-
-		w.ack(msg)
+		_, err = w.bot.Send(id, message)
+		if err != nil {
+			w.logger.Errorf("[worker #%d]: failed to get send due to error %v", w.id, err)
+		}
 	}
+
 }
 
 func (w *worker) sendResponse(d map[string]string) {
