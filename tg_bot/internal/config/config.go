@@ -26,15 +26,17 @@ type Config struct {
 			MessagesBufferSize int    `yaml:"messagesbuffersize" env:"YTS_RABBIT_CONSUMER_MBS" env-default:"100"`
 		} `yaml:"consumer" env-required:"true"`
 		Producer struct {
-			Queue string `yaml:"queue" env:"YTS_Rabbit_PRODUCERQUEUE" env-required:"true"`
+			YouTubeQueue string `yaml:"ytqueue" env:"YTS_Rabbit_PRODUCERQUEUE" env-required:"true"`
 		} `yaml:"producer" env-required:"true"`
 	} `yaml:"rabbitMQ"`
 	AppConfig AppConfig `yaml:"app" env-required:"true"`
 }
 
 type AppConfig struct {
-	EventWorkers int    `yaml:"event_workers" env:"ST-BOT-EventWorkers" env-default:"3" env-required:"true"`
-	LogLevel     string `yaml:"log_level" env:"ST-BOT-loglevel" env-default:"error" env-required:"true"`
+	EventWorkers struct {
+		YoutubeWorkers int `yaml:"youtubeWorkers" env:"ST-BOT-YoutubeEventWorkers" env-default:"3" env-required:"true"`
+	} `yaml:"event_workers"`
+	LogLevel string `yaml:"log_level" env:"ST-BOT-loglevel" env-default:"error" env-required:"true"`
 }
 
 var instance *Config

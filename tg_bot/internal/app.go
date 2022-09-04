@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/GermanBogatov/tg_bot/internal/config"
 	"github.com/GermanBogatov/tg_bot/internal/events"
+	"github.com/GermanBogatov/tg_bot/internal/events/youtube"
 	"github.com/GermanBogatov/tg_bot/pkg/client/mq"
 	"github.com/GermanBogatov/tg_bot/pkg/client/mq/rabbitmq"
 	"github.com/GermanBogatov/tg_bot/pkg/logging"
@@ -14,18 +15,20 @@ import (
 )
 
 type app struct {
-	cfg        *config.Config
-	logger     *logging.Logger
-	httpServer *http.Server
-	bot        *tele.Bot
-	producer   mq.Producer
+	cfg                    *config.Config
+	logger                 *logging.Logger
+	httpServer             *http.Server
+	bot                    *tele.Bot
+	producer               mq.Producer
+	youtubeProcessStrategy events.ProcessEventStrategy
 }
 
 func NewApp(logger *logging.Logger, cfg *config.Config) (App, error) {
 
 	return &app{
-		cfg:    cfg,
-		logger: logger,
+		cfg:                    cfg,
+		logger:                 logger,
+		youtubeProcessStrategy: youtube.NewYoutubeProcessEventStrategy(logger),
 	}, nil
 }
 
@@ -34,10 +37,8 @@ type App interface {
 }
 
 func (a *app) Run() {
-	a.startBot()
 	a.startConsume()
-	a.bot.Start()
-
+	a.startBot()
 }
 
 func (a *app) startConsume() {
@@ -74,7 +75,7 @@ func (a *app) startConsume() {
 	}
 
 	for i := 0; i < a.cfg.AppConfig.EventWorkers; i++ {
-		worker := events.NewWorker(i, consumer, producer, messages, a.logger, a.bot)
+		worker := events.NewWorker(i, consumer, nil, producer, messages, a.logger)
 
 		go worker.Process()
 		a.logger.Infof("EVent Worker #%d statred", i)
@@ -95,20 +96,26 @@ func (a *app) startBot() {
 		return
 	}
 
+	a.bot.Handle("/help", func(c tele.Context) error {
+		return c.Send(fmt.Sprintf("/yt - find youtube track!"))
+	})
+
 	a.bot.Handle("/yt", func(c tele.Context) error {
 		trackname := c.Message().Payload
-		request := events.SearchTrackRequest{
+		request := youtube.SearchTrackRequest{
 			RequestID: fmt.Sprintf("%d", c.Sender().ID),
 			Name:      trackname,
 		}
 
 		marshal, _ := json.Marshal(request)
-		err := a.producer.Publish(a.cfg.RabbitMQ.Producer.Queue, marshal)
+		err := a.producer.Publish(a.cfg.RabbitMQ.Producer.YouTubeQueue, marshal)
 		if err != nil {
 			return c.Send(fmt.Sprintf("ошибка: %s", err.Error()))
 		}
 		return c.Send(fmt.Sprintf("Заявка принята"))
 
 	})
+
+	a.bot.Start()
 
 }
