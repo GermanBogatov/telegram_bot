@@ -1,6 +1,8 @@
 package youtube
 
-import "github.com/GermanBogatov/tg_bot/internal/events"
+import (
+	"github.com/GermanBogatov/tg_bot/internal/events/model"
+)
 
 type SearchTrackRequest struct {
 	RequestID string `json:"request_id"`
@@ -8,8 +10,8 @@ type SearchTrackRequest struct {
 }
 
 type SearchTrackResponse struct {
-	Meta events.ResponseMeta `json:"meta"`
-	Data ResponseData        `json:"data"`
+	Meta model.ResponseMeta `json:"meta"`
+	Data ResponseData       `json:"data"`
 }
 
 type ResponseData struct {

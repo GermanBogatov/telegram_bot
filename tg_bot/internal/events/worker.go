@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/GermanBogatov/tg_bot/internal"
+	"github.com/GermanBogatov/tg_bot/internal/service/bot"
 	"github.com/GermanBogatov/tg_bot/pkg/client/mq"
 	"github.com/GermanBogatov/tg_bot/pkg/logging"
 )
@@ -14,12 +14,11 @@ type worker struct {
 	messages        <-chan mq.Message
 	logger          *logging.Logger
 	processStrategy ProcessEventStrategy
-	botService      internal.BotService
+	botService      bot.Service
 }
 
-//TODO попробовать вернуть структуру а не интерфейс
-func NewWorker(id int, client mq.Consumer, processStrategy ProcessEventStrategy, producer mq.Producer, messages <-chan mq.Message, logger *logging.Logger) Worker {
-	return &worker{id: id, client: client, processStrategy: processStrategy, producer: producer, messages: messages, logger: logger}
+func NewWorker(id int, client mq.Consumer, processStrategy ProcessEventStrategy, botService bot.Service, producer mq.Producer, messages <-chan mq.Message, logger *logging.Logger) Worker {
+	return &worker{id: id, client: client, processStrategy: processStrategy, botService: botService, producer: producer, messages: messages, logger: logger}
 }
 
 type Worker interface {
@@ -27,8 +26,8 @@ type Worker interface {
 }
 
 func (w *worker) Process() {
-	for msg := range w.messages {
 
+	for msg := range w.messages {
 		processedEvent, err := w.processStrategy.Process(msg.Body)
 		if err != nil {
 			w.logger.Errorf("[worker #%d]: failed to unmarshal event due to error %v", w.id, err)

@@ -55,6 +55,7 @@ func (a *app) Run() {
 
 func (a *app) startConsume() {
 	a.logger.Info("Start consumer")
+
 	consumer, err := rabbitmq.NewRabbitMQConsumer(rabbitmq.ConsumerConfig{
 		BaseConfig: rabbitmq.BaseConfig{
 			Host:     a.cfg.RabbitMQ.Host,
@@ -77,6 +78,10 @@ func (a *app) startConsume() {
 			Password: a.cfg.RabbitMQ.Password,
 		},
 	})
+	if err != nil {
+		a.logger.Fatal(err)
+	}
+	consumer.DeclareQueue(a.cfg.RabbitMQ.Consumer.Queue, true, false, false, nil)
 	if err != nil {
 		a.logger.Fatal(err)
 	}

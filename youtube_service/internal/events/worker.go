@@ -3,10 +3,11 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"github.com/GermanBogatov/youtube_service/internal/events/model/request"
+	"github.com/GermanBogatov/youtube_service/internal/events/model/responce"
 	"github.com/GermanBogatov/youtube_service/internal/youtube"
 	"github.com/GermanBogatov/youtube_service/pkg/client/mq"
 	"github.com/GermanBogatov/youtube_service/pkg/logging"
-	"strconv"
 )
 
 type worker struct {
@@ -30,7 +31,7 @@ type Worker interface {
 
 func (w *worker) Process() {
 	for msg := range w.messages {
-		event := SearchTrack{}
+		event := request.SearchTrack{}
 		if err := json.Unmarshal(msg.Body, &event); err != nil {
 			w.logger.Errorf("[worker #%d]: failed to unmarshal event due to error %v", w.id, err)
 			w.logger.Errorf("[worker #%d]: body: %s", w.id, msg.Body)
@@ -38,18 +39,23 @@ func (w *worker) Process() {
 			w.reject(msg)
 			continue
 		}
-		respData := map[string]string{
-			"request_id": event.RequestID,
+
+		respData := responce.SearchTrack{
+			Meta: responce.Meta{
+				RequestID: event.RequestID,
+			},
+			Data: responce.Data{},
 		}
-		name, err := w.service.FindTrackByName(context.TODO(), event.Name)
+
+		var errorStr string
+		url, err := w.service.FindTrackByName(context.TODO(), event.Name)
 		if err != nil {
-			respData["err"] = err.Error()
+			errorStr = err.Error()
+			respData.Meta.Error = &errorStr
 		} else {
-			respData["name"] = name
+			respData.Data.URL = url
 
 		}
-
-		respData["success"] = strconv.FormatBool(err == nil)
 
 		w.sendResponse(respData)
 
@@ -57,7 +63,7 @@ func (w *worker) Process() {
 	}
 }
 
-func (w *worker) sendResponse(d map[string]string) {
+func (w *worker) sendResponse(d interface{}) {
 	b, err := json.Marshal(d)
 	if err != nil {
 		w.logger.Errorf("[worker #%d]: failed to reject due to error %v", w.id, err)

@@ -1,4 +1,4 @@
-package events
+package model
 
 import "fmt"
 
@@ -8,21 +8,20 @@ type ResponseMessage struct {
 }
 
 type ResponseMeta struct {
-	RequestID string `json:"request_id"`
-	Success   bool   `json:"success"`
-	Error     string `json:"err"`
+	RequestID string  `json:"request_id"`
+	Error     *string `json:"err,omitempty"`
 }
 
 func (m *ResponseMeta) String() string {
 	return fmt.Sprintf("RequestID: %s, Error: %s", m.RequestID, m.Error)
 }
 
-type ProccesedEvent struct {
+type ProcesedEvent struct {
 	RequestID string
 	Message   string
 	Err       error
 }
 
-func (m *ProccesedEvent) String() string {
+func (m *ProcesedEvent) String() string {
 	return fmt.Sprintf("RequestID: %s, Message: %s, Error: %s", m.RequestID, m.Message, m.Err)
 }

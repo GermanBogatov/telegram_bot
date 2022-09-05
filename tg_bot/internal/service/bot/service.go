@@ -1,23 +1,23 @@
-package internal
+package bot
 
 import (
 	"fmt"
-	"github.com/GermanBogatov/tg_bot/internal/events"
+	"github.com/GermanBogatov/tg_bot/internal/events/model"
 	"github.com/GermanBogatov/tg_bot/pkg/logging"
 	tele "gopkg.in/telebot.v3"
 	"strconv"
 )
 
-type BotService struct {
-	bot    *tele.Bot
-	logger *logging.Logger
+type Service struct {
+	Bot    *tele.Bot
+	Logger *logging.Logger
 }
 
-func (bs *BotService) SendMessage(data events.ProccesedEvent) error {
+func (bs *Service) SendMessage(data model.ProcesedEvent) error {
 	i, _ := strconv.ParseInt(data.RequestID, 10, 64)
-	id, err := bs.bot.ChatByID(i)
+	id, err := bs.Bot.ChatByID(i)
 	if err != nil {
-		bs.logger.Tracef("Bot send ResponseMessage ProcessedEvent: %s", data)
+		bs.Logger.Tracef("Bot send ResponseMessage ProcessedEvent: %s", data)
 		return fmt.Errorf("failed to get chat by id due to error %v", err)
 	}
 
@@ -26,9 +26,9 @@ func (bs *BotService) SendMessage(data events.ProccesedEvent) error {
 		message = fmt.Sprintf("Запрос не обработан, произошла ошибка (%s)", data.Err)
 	}
 
-	_, err = bs.bot.Send(id, message)
+	_, err = bs.Bot.Send(id, message)
 	if err != nil {
-		bs.logger.Tracef("ChatID: %d, Data: %s", id.ID, data)
+		bs.Logger.Tracef("ChatID: %d, Data: %s", id.ID, data)
 		return fmt.Errorf("failed to get send due to error %v", err)
 	}
 

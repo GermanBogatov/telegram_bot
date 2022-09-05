@@ -22,7 +22,7 @@ type Config struct {
 		Username string `yaml:"username" env:"YTS_RABBIT_USERNAME" env-required:"true"`
 		Password string `yaml:"password" env:"YTS_RABBIT_PASSWORD" env-required:"true"`
 		Consumer struct {
-			Queue              string `yaml:"queue" env:"YTS_RABBIT_CONSUMER_QUEUE" env-required:"true"`
+			YouTubeQueue       string `yaml:"ytqueue" env:"YTS_Rabbit_CONSUMERQUEUE" env-required:"true"`
 			MessagesBufferSize int    `yaml:"messagesbuffersize" env:"YTS_RABBIT_CONSUMER_MBS" env-default:"100"`
 		} `yaml:"consumer" env-required:"true"`
 		Producer struct {

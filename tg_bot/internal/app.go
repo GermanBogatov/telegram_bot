@@ -6,6 +6,7 @@ import (
 	"github.com/GermanBogatov/tg_bot/internal/config"
 	"github.com/GermanBogatov/tg_bot/internal/events"
 	"github.com/GermanBogatov/tg_bot/internal/events/youtube"
+	"github.com/GermanBogatov/tg_bot/internal/service/bot"
 	"github.com/GermanBogatov/tg_bot/pkg/client/mq"
 	"github.com/GermanBogatov/tg_bot/pkg/client/mq/rabbitmq"
 	"github.com/GermanBogatov/tg_bot/pkg/logging"
@@ -18,9 +19,9 @@ type app struct {
 	cfg                    *config.Config
 	logger                 *logging.Logger
 	httpServer             *http.Server
-	bot                    *tele.Bot
 	producer               mq.Producer
 	youtubeProcessStrategy events.ProcessEventStrategy
+	bot                    *tele.Bot
 }
 
 func NewApp(logger *logging.Logger, cfg *config.Config) (App, error) {
@@ -37,11 +38,19 @@ type App interface {
 }
 
 func (a *app) Run() {
+
+	bot, err := a.createBot()
+	if err != nil {
+		return
+	}
+	a.bot = bot
 	a.startConsume()
-	a.startBot()
+	a.bot.Start()
 }
 
 func (a *app) startConsume() {
+	test := new(chan mq.Message)
+	fmt.Println("test", test)
 	a.logger.Info("Start consumer")
 	consumer, err := rabbitmq.NewRabbitMQConsumer(rabbitmq.ConsumerConfig{
 		BaseConfig: rabbitmq.BaseConfig{
@@ -68,39 +77,52 @@ func (a *app) startConsume() {
 	if err != nil {
 		a.logger.Fatal(err)
 	}
-
-	messages, err := consumer.Consume(a.cfg.RabbitMQ.Consumer.Queue)
+	err = consumer.DeclareQueue(a.cfg.RabbitMQ.Consumer.YouTubeQueue, true, false, false, nil)
+	if err != nil {
+		a.logger.Fatal(err)
+	}
+	youtubeMessages, err := consumer.Consume(a.cfg.RabbitMQ.Consumer.YouTubeQueue)
 	if err != nil {
 		a.logger.Fatal(err)
 	}
 
-	for i := 0; i < a.cfg.AppConfig.EventWorkers; i++ {
-		worker := events.NewWorker(i, consumer, nil, producer, messages, a.logger)
+	botservice := bot.Service{
+		Bot:    a.bot,
+		Logger: a.logger,
+	}
+
+	for i := 0; i < a.cfg.AppConfig.EventWorkers.YoutubeWorkers; i++ {
+		worker := events.NewWorker(i, consumer, a.youtubeProcessStrategy, botservice, producer, youtubeMessages, a.logger)
 
 		go worker.Process()
 		a.logger.Infof("EVent Worker #%d statred", i)
 	}
+
+	a.logger.Println("start producer")
 	a.producer = producer
 }
 
-func (a *app) startBot() {
+func (a *app) createBot() (abot *tele.Bot, botErr error) {
+	a.logger.Info("Init bot token")
 	pref := tele.Settings{
-		Token:  a.cfg.Telegram.Token,
-		Poller: &tele.LongPoller{Timeout: 10 * time.Second},
+		Token:   a.cfg.Telegram.Token,
+		Poller:  &tele.LongPoller{Timeout: 60 * time.Second},
+		Verbose: false,
+		OnError: a.OnBotError,
 	}
 
-	var botErr error
-	a.bot, botErr = tele.NewBot(pref)
+	a.logger.Info("Create NewBot")
+	abot, botErr = tele.NewBot(pref)
 	if botErr != nil {
 		a.logger.Fatal(botErr)
 		return
 	}
 
-	a.bot.Handle("/help", func(c tele.Context) error {
+	abot.Handle("/help", func(c tele.Context) error {
 		return c.Send(fmt.Sprintf("/yt - find youtube track!"))
 	})
 
-	a.bot.Handle("/yt", func(c tele.Context) error {
+	abot.Handle("/yt", func(c tele.Context) error {
 		trackname := c.Message().Payload
 		request := youtube.SearchTrackRequest{
 			RequestID: fmt.Sprintf("%d", c.Sender().ID),
@@ -116,6 +138,10 @@ func (a *app) startBot() {
 
 	})
 
-	a.bot.Start()
+	return
 
+}
+
+func (a *app) OnBotError(err error, ctx tele.Context) {
+	a.logger.Error(err)
 }
