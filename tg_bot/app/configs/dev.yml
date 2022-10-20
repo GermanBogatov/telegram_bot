@@ -1,0 +1,20 @@
+---
+
+is_debug: true
+is_development: true
+telegram:
+  token: 5462801617:AAGu5112sSwju_IBcdtsUicexWydh_kmXqg
+rabbitMQ:
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+  consumer:
+    youtube: yt-s-resp-events
+    messages_buff_size: 100
+  producer:
+    youtube: yt-s-req-events
+app:
+  event_workers:
+    youtube: 3
+  log_level: trace

@@ -1,0 +1,19 @@
+---
+
+is_debug: true
+rabbitMQ:
+  host: localhost
+  port: 5672
+  username: guest
+  password: guest
+  consumer:
+    queue: yt-s-req-events
+    messagesbuffersize: 100
+  producer:
+    queue: yt-s-resp-events
+youtube:
+  api_url: https://www.googleapis.com/spotify/v3
+  access_token: ya29.a0Aa4xrXMxnXCsIvXaTbkuLWDlTXkaJkVL-8hzrR8e00Y1LCiN9iI3lJqW7_a7prPRC0PMcPDvpcASw6c31jj5QUHAlQpf8SwxAVTYXO1A49BkR5LNQGSWSpB6RGDFi_K1TNterrCX-fHQUmXyvo2l9nifgd5eaCgYKATASARASFQEjDvL9RpiVfLeAoZ_sbjjT0aYG2g0163
+app:
+  event_workers: 3
+  log_level: trace
